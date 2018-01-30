@@ -5,7 +5,7 @@ FactoryGirl.define do
 
     trait :with_comments do
       transient do
-        comment_count 2
+        comment_count 6
       end
 
       after(:create) do |post, evaluator|

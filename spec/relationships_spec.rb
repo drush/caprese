@@ -277,6 +277,93 @@ describe 'Managing relationships of resources', type: :request do
         expect(json['data'][0]['attributes']).to be_instance_of(Hash)
       end
 
+      context 'pagination' do
+        it 'should return the correct number of records per page' do
+          subject(:query_str) { '?page[size]=2' }
+          expect(json['data'].count).to eq(2)
+        end
+    
+        it 'should return the correct page' do
+          subject(:query_str) { '?page[size]=1&page[number]=2&sort=-body' }
+          expect(json['data'].first['id']).to eq(resource.comments.order(body: :desc).first(2)[1].id.to_s)
+        end
+    
+        context 'when no page size is provided' do
+          before do
+            @default_page_size = Caprese.config.default_page_size
+            Caprese.config.default_page_size = 2
+          end
+    
+          it 'returns the default page size' do
+            expect(json['data'].count).to eq(Caprese.config.default_page_size)
+          end
+    
+          after do
+            Caprese.config.default_page_size = @default_page_size
+          end
+        end
+    
+        context 'when page size is above maximum' do
+          before do
+            @max_page_size = Caprese.config.max_page_size
+            Caprese.config.max_page_size = 1
+          end
+    
+          it 'returns the max page size' do
+            subject(:query_str) { '?page[size]=10' }
+            expect(json['data'].count).to eq(Caprese.config.max_page_size)
+          end
+    
+          after do
+            Caprese.config.max_page_size = @max_page_size
+          end
+        end
+    
+        context 'limit and offset' do
+          it 'applies the limit' do
+            subject(:query_str) { 'limit=1' }
+            expect(json['data'].count).to eq(1)
+          end
+    
+          it 'applies the offset' do
+            subject(:query_str) { '?offset=2' }
+            expect(json['data'][0]['id']).to eq(resources.comments.offset(2).first.id.to_s)
+          end
+    
+          context 'when offset is negative' do
+            it 'starts from end of the scope' do
+              subject(:query_str) { '?offset=-1&limit=1' }
+              expect(json['data'][0]['id']).to eq(resource.comments.last.id.to_s)
+            end
+          end
+        end
+      end
+
+      context 'sorting' do
+        it 'should return a correctly ascending collection' do
+          subject(:query_str) { '?sort=body' }
+          resource.comments.reorder(body: :asc).each_with_index do |order, index|
+            expect(json['data'][index]['id']).to eq(order.id.to_s)
+          end
+        end
+    
+        it 'should return a correctly descending collection' do
+          subject(:query_str) { '?sort=-body' }
+          resource.comments.reorder(body: :desc).each_with_index do |order, index|
+            expect(json['data'][index]['id']).to eq(order.id.to_s)
+          end
+        end
+      end
+
+      context 'filtering' do
+        subject(:query_str) { "?filter[body]=#{URI.escape(resource.comments.last.body)}" }
+        it 'should return a correctly filtered collection' do
+          # get "/api/v1/comments?filter[body]=#{URI.escape(comments.last.body)}"
+          expect(json['data'].count).to eq(1)
+          expect(json['data'].first['id']).to eq(resource.comments.last.id.to_s)
+        end
+      end
+
       context 'with relation id' do
         subject(:relationship) { "comments/#{resource.comments.first.id}" }
 
