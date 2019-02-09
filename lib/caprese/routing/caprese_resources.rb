@@ -1,7 +1,7 @@
 require 'action_dispatch/routing/mapper'
 
 class ActionDispatch::Routing::Mapper
-  def caprese_resources(*resources, &block)
+  def caprese_resources(*resources)
     options = resources.extract_options!
 
     resources.each do |r|
@@ -10,16 +10,16 @@ class ActionDispatch::Routing::Mapper
 
         member do
           get 'relationships/:relationship',
-            to: "#{parent_resource.name}#get_relationship_definition",
-            as: :relationship_definition
+              to: "#{parent_resource.controller}#get_relationship_definition",
+              as: :relationship_definition
 
           match 'relationships/:relationship',
-            to: "#{parent_resource.name}#update_relationship_definition",
-            via: [:patch, :post, :delete]
+                to: "#{parent_resource.controller}#update_relationship_definition",
+                via: %i[patch post delete]
 
           get ':relationship(/:relation_primary_key_value)',
-            to: "#{parent_resource.name}#get_relationship_data",
-            as: :relationship_data
+              to: "#{parent_resource.controller}#get_relationship_data",
+              as: :relationship_data
         end
       end
     end
