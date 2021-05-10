@@ -1,5 +1,4 @@
 require 'action_controller'
-require 'active_support/configurable'
 require 'caprese/concerns/url_helpers'
 require 'caprese/concerns/versioning'
 require 'caprese/controller/concerns/aliasing'
@@ -12,9 +11,7 @@ require 'caprese/controller/concerns/rendering'
 require 'caprese/controller/concerns/typing'
 
 module Caprese
-  # TODO: Convert to ActionController::API with Rails 5
-  class Controller < ActionController::Base
-    include ActiveSupport::Configurable
+  class Controller < ActionController::API
     include Aliasing
     include Callbacks
     # FIXME: Be careful about including `Errors` in certain order, because it has `rescue_from Exception` and this affects
